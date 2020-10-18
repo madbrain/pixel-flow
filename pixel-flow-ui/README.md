@@ -6,6 +6,10 @@ Typescript implementation of a node graph editor mainly inspired by Blender Node
 The editor is generic enough to be used in different contexts, as an example the editor is used as an
 graphical frontend to create [GEGL](https://www.gegl.org/) node graphs.
 
+# Screenshot
+
+![Screenshot](docs/screenshot.png)
+
 # TODO
 
 * handle node resize (IdleState)
