@@ -91,7 +91,10 @@ export class IdleState extends State {
                         }
                         return this;
                     }
-                    console.log("TODO resize on border", node);
+                    const radius = editor.renderer.style.roundRadius;
+                    if (node.bounds.corner().offset(-radius, -radius).distance(event.position) < radius) {
+                        return new DragResizeNodeState(editor, node, event.position);
+                    }
                     return this;
                 }
             }
@@ -246,6 +249,55 @@ class DragSelectionBoxState extends State {
 
     handleMouseUp(editor: Editor, event: Event): State {
         this.updateSelection(editor, event);
+        editor.removeFeedback(this.feedback);
+        editor.draw();
+        return new IdleState();
+    }
+
+    handleMouseDown(editor: Editor, event: Event): State {
+        // should not happen, in case return to Idle
+        return new IdleState();
+    }
+}
+
+class ResizeNodeFeedback implements VisualFeedback {
+    
+    bounds: Rectangle;
+    
+    constructor(private fromPosition: Point, private toPosition: Point) {
+        this.update(fromPosition);
+    }
+
+    draw(editor: Editor) {
+        editor.renderer.drawSelection(this.bounds);
+    }
+
+    update(position: Point) {
+        this.toPosition = position;
+        this.bounds = this.fromPosition.rectTo(this.toPosition);
+    }
+}
+
+class DragResizeNodeState extends State {
+
+    feedback: ResizeNodeFeedback;
+
+    constructor (editor: Editor, private node: Node, startPoint: Point) {
+        super();
+        this.feedback = new ResizeNodeFeedback(node.bounds.origin, startPoint)
+        editor.addFeedback(this.feedback);
+        editor.draw();
+    }
+
+    handleMouseMove(editor: Editor, event: Event): State {
+        this.feedback.update(event.position);
+        editor.draw();
+        return this;
+    }
+
+    handleMouseUp(editor: Editor, event: Event): State {
+        // TODO emit command
+        console.log("EMIT resize node command", this.node, this.feedback.bounds);
         editor.removeFeedback(this.feedback);
         editor.draw();
         return new IdleState();

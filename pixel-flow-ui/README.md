@@ -12,7 +12,7 @@ graphical frontend to create [GEGL](https://www.gegl.org/) node graphs.
 
 # TODO
 
-* handle node resize (IdleState)
+* finish node resize command
 
 # BUGS
 
