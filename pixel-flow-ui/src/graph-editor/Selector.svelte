@@ -17,7 +17,6 @@
 
     export function closeSelector(value) {
         hide = true;
-        //dispatcher('close', value);
         getEditor().closeSelector(value);
     }
 

@@ -2,7 +2,7 @@ import { Rectangle, Point } from "./geometry";
 import { Renderer, rgb, Corner, Direction, ZoomState } from "./renderer";
 import { defaultPropertyHandler } from "./handlers";
 import { State, IdleState, AddNodeState, WaitSelectorCloseState } from "./states";
-import { NodeDefinition, NodeFactory, PropertyDefinition, PropertyType } from './nodes'
+import { NodeDefinition, NodeFactory, PropertyDefinition, PropertyType } from './nodes';
 import { DeleteNodesCommand } from './commands';
 import { buildTreeFromDefinitions } from "./tree";
 
@@ -507,6 +507,10 @@ export class Editor {
         }
         console.log("Unknown selector", type, context);
         return new IdleState();
+    }
+
+    doAction(position: Point, action: string) {
+        this.state = this.openSelector(position, action, {});
     }
 
     handleMouseDown(event: Event) {

@@ -65,7 +65,10 @@ input {
     border: 1px solid #999999;
     background-color: #999999;
     border-radius: 5px;
+    box-sizing: border-box;
     margin: 0;
+    padding: 0.4em;
+    font-size: inherit;
 }
 
 .error {

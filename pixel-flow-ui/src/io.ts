@@ -1,7 +1,7 @@
 
-import { Node, NodeGroup, NodeConnection } from './editor';
-import { NodeFactory } from './nodes'
-import { Point } from './geometry';
+import { Node, NodeGroup, NodeConnection } from './graph-editor/editor';
+import { NodeFactory } from './graph-editor/nodes'
+import { Point } from './graph-editor/geometry';
 
 export interface PointIO {
     x: number;

@@ -1,8 +1,8 @@
 <script>
     import { onMount, getContext } from 'svelte';
-    import { key as selectorKey } from '../selector';
+    import { key as selectorKey } from '../graph-editor/selector';
+    import Selector from '../graph-editor/Selector.svelte';
     import { hsvToRgb, rgbToHsv } from './color';
-    import Selector from '../Selector.svelte';
 
     export let id = "color";
     let context;

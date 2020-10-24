@@ -78,7 +78,10 @@
         border: 0;
         background-color: #999999;
         border-radius: 5px;
+        box-sizing: border-box;
         margin: 0 0 5px 0;
+        padding: 0.4em;
+        font-size: inherit;
     }
     
     input:focus {

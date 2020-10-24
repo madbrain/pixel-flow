@@ -7,11 +7,11 @@ import { key as selectorKey } from './selector';
 import TreeSelector from './TreeSelector.svelte';
 import ValueSelector from './ValueSelector.svelte';
 
+let parentElement;
 let canvas;
 let context;
-let width = window.innerWidth;
-let height = window.innerHeight;
-let pixelRatio = window.devicePixelRatio;
+let width;
+let height;
 
 export let nodeGroup;
 export let nodeFactory;
@@ -30,6 +30,9 @@ setContext(selectorKey, {
 });
 
 onMount(() => {
+    const rect = parentElement.getBoundingClientRect();
+    width = rect.width;
+    height = rect.height;
     context = canvas.getContext('2d', {alpha: false});
     renderer = new Renderer(context, { width, height }, theme, graphicalHelper);
     editor = new Editor(renderer, nodeFactory, nodeGroup, {
@@ -42,13 +45,21 @@ onMount(() => {
             return false;
         }
     });
-    editor.draw();
+    setTimeout(() => {
+        renderer.setSize({ width, height });
+        editor.draw();
+    }, 10);
 });
 
+export function doAction(action) {
+    const rect = parentElement.getBoundingClientRect();
+    editor.doAction(new Point(rect.left, rect.top), action);
+}
+
 function handleResize() {
-    width = window.innerWidth;
-    height= window.innerHeight;
-    pixelRatio = window.devicePixelRatio;
+    const rect = parentElement.getBoundingClientRect();
+    width = rect.width;
+    height= rect.height;
     setTimeout(() => {
         renderer.setSize({ width, height });
         editor.draw();
@@ -69,24 +80,34 @@ function makeSpecialKeys(ev) {
     return specialKeys;
 }
 
+function makeEvent(ev) {
+    const rect = ev.target.getBoundingClientRect();
+    return {
+        position: new Point(ev.clientX - rect.left, ev.clientY - rect.top),
+        specialKeys: makeSpecialKeys(ev),
+        deltaY: ev.deltaY,
+        key: ev.key
+    };
+}
+
 function handleMouseDown(ev) {
-    editor.handleMouseDown({ position: new Point(ev.clientX, ev.clientY), specialKeys: makeSpecialKeys(ev) });
+    editor.handleMouseDown(makeEvent(ev));
 }
 
 function handleMouseUp(ev) {
-    editor.handleMouseUp({ position: new Point(ev.clientX, ev.clientY), specialKeys: makeSpecialKeys(ev) });
+    editor.handleMouseUp(makeEvent(ev));
 }
 
 function handleMouseMove(ev) {
-    editor.handleMouseMove({ position: new Point(ev.clientX, ev.clientY), specialKeys: makeSpecialKeys(ev) });
+    editor.handleMouseMove(makeEvent(ev));
 }
 
 function handleMouseWheel(ev) {
-    editor.handleMouseWheel({ position: new Point(ev.clientX, ev.clientY), specialKeys: makeSpecialKeys(ev), deltaY: ev.deltaY });
+    editor.handleMouseWheel(makeEvent(ev));
 }
 
 function handleKeyPress(ev) {
-    editor.handleKeyPress({ position: new Point(ev.clientX, ev.clientY), specialKeys: makeSpecialKeys(ev), key: ev.key });
+    editor.handleKeyPress(makeEvent(ev));
 }
 </script>
 
@@ -98,14 +119,14 @@ function handleKeyPress(ev) {
     }
 </style>
 
-<div
+<div bind:this={parentElement}
     on:mousedown={handleMouseDown}
 	on:mouseup={handleMouseUp}
 	on:mousemove={handleMouseMove}
     on:wheel={handleMouseWheel}>
 
     <canvas bind:this={canvas}
-        width={width*pixelRatio} height={height*pixelRatio}
+        width={width} height={height}
         style="width: {width}px; height: {height}px;">
     </canvas>
 

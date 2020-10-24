@@ -1,12 +1,12 @@
 
-import { ChangePropertyValueCommand } from '../commands';
-import { Editor, Event, Node, NodeProperty } from '../editor';
-import { Point } from '../geometry';
-import { getDefaultPropertyHandler } from '../handlers';
-import { NodeDefinition, PropertyDefinition, PropertyType } from '../nodes';
-import { Color, GraphicalHelper, PropertyHandler, Renderer, rgb } from '../renderer';
-import { State } from '../states';
-import { CommonValueType, ValueDefinition } from '../value';
+import { ChangePropertyValueCommand } from '../graph-editor/commands';
+import { Editor, Event, Node, NodeProperty } from '../graph-editor/editor';
+import { Point } from '../graph-editor/geometry';
+import { getDefaultPropertyHandler } from '../graph-editor/handlers';
+import { NodeDefinition, PropertyDefinition, PropertyType } from '../graph-editor/nodes';
+import { Color, GraphicalHelper, PropertyHandler, Renderer, rgb } from '../graph-editor/renderer';
+import { State } from '../graph-editor/states';
+import { CommonValueType, ValueDefinition } from '../graph-editor/value';
 import { convertColorFromString } from './color';
 import { gegl } from './gegl-nodes-db';
 

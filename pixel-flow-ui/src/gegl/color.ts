@@ -1,4 +1,4 @@
-import { Color } from "../renderer";
+import { Color } from "../graph-editor/renderer";
 
 export function convertColorFromString(value: string): Color {
     function getHex(index: number) {

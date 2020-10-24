@@ -64,6 +64,7 @@ export class IdleState extends State {
         if (event.specialKeys & ControlKey.AltKey) {
             return new DragPanningState(event.position);
         }
+        // TODO must process nodes in reverse order to process overlapping nodes first
         for (let node of editor.nodeGroup.nodes) {
             // TODO compute a special node bounds containing connectors to speed up detection
             const connector = findConnectorOfNode(node, event.position, editor.renderer.style);
