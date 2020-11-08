@@ -1,0 +1,41 @@
+{
+  "nodes": [
+      { "id": "load", "type": "gegl:png-load", "location": {"x":54.546105776558534,"y":328.53147386069196}, "properties": [
+          { "name": "path", "value": "cat.png" }
+      ]},
+      { "id": "extractComp", "type": "gegl:component-extract", "location": {"x":322.54610577655853,"y":437.53147386069196}, "properties": [
+          { "name": "component", "value": "hue" },
+          { "name": "invert", "value": false }
+      ]},
+      { "id": "curve", "type": "gimp:curve", "location": {"x":596.5461057765585,"y":511.53147386069196}, "properties": [
+          { "name": "curve", "value": { "points": [
+              { "x": 0.0, "y": 0.0 },
+              { "x": 0.01171875, "y": 0.0 },
+              { "x": 0.015625, "y": 0.5 },
+              { "x": 0.3, "y": 0.0 },
+              { "x": 1.0, "y": 0.0 }
+          ] } }
+      ]},
+      { "id": "color", "type": "gimp:colorize", "location": {"x":864.5461057765585,"y":537.5314738606919}, "properties": [
+          { "name": "color", "value": "#FF000000" }
+      ] },
+      { "id": "gray", "type": "gegl:gray", "location": {"x":332.54610577655853,"y":221.53147386069196}},
+      { "id": "edgeDetect", "type": "gegl:edge-neon", "location": {"x":600.5461057765585,"y":178.53147386069196}},
+      { "id": "add", "type": "gegl:add", "location": {"x":1149.5461057765585,"y":260.53147386069196}},
+      { "id": "save", "type": "gegl:png-save", "location": {"x":1436.5461057765585,"y":365.53147386069196}, "properties": [
+          { "name": "path", "value": "out.png" },
+          { "name": "compression", "value": 3 },
+          { "name": "bitdepth", "value": 8 }
+      ]}
+  ],
+  "connections": [
+      { "from": { "node": "load", "property": "output" }, "to": { "node": "extractComp", "property": "input" } },
+      { "from": { "node": "extractComp", "property": "output" }, "to": { "node": "curve", "property": "input" } },
+      { "from": { "node": "curve", "property": "output" }, "to": { "node": "color", "property": "input" } },
+      { "from": { "node": "color", "property": "output" }, "to": { "node": "add", "property": "input" } },
+      { "from": { "node": "add", "property": "output" }, "to": { "node": "save", "property": "input" } },
+      { "from": { "node": "load", "property": "output" }, "to": { "node": "gray", "property": "input" } },
+      { "from": { "node": "gray", "property": "output" }, "to": { "node": "edgeDetect", "property": "input" } },
+      { "from": { "node": "edgeDetect", "property": "output" }, "to": { "node": "add", "property": "aux" } }
+  ]
+}

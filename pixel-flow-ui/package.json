@@ -27,6 +27,7 @@
     "webpack-dev-server": "^3.10.3"
   },
   "dependencies": {
+    "@stomp/rx-stomp": "^1.0.1",
     "lodash": "^4.17.15",
     "rxjs": "^6.5.5"
   }

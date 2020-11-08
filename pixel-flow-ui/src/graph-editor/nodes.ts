@@ -11,6 +11,7 @@ export enum PropertyType {
 
 export interface PropertyDefinition {
     type: PropertyType;
+    id: string,
     label: string;
     linkable?: boolean;
     editable?: boolean;

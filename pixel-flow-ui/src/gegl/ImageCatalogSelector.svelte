@@ -1,31 +1,16 @@
 <script>
+import { ajax } from 'rxjs/ajax';
+
     import { getContext } from 'svelte';
     import { key as selectorKey } from '../graph-editor/selector';
 
     export let id = "images";
+    export let workspace;
     let x = 0;
     let y = 0;
     let hide = true;
     let context;
-    let images = [
-        { id: "1", src: "cat.png" },
-        { id: "2", src: "cat.png" },
-        { id: "3", src: "cat.png" },
-        { id: "3", src: "cat.png" },
-        { id: "3", src: "cat.png" },
-        { id: "3", src: "cat.png" },
-        { id: "3", src: "cat.png" },
-        { id: "3", src: "cat.png" },
-        { id: "3", src: "cat.png" },
-        { id: "3", src: "cat.png" },
-        { id: "3", src: "cat.png" },
-        { id: "3", src: "cat.png" },
-        { id: "3", src: "cat.png" },
-        { id: "3", src: "cat.png" },
-        { id: "3", src: "cat.png" },
-        { id: "3", src: "cat.png" },
-        { id: "3", src: "cat.png" },
-    ];
+    let images = [];
 
     const { register, getEditor } = getContext(selectorKey);
     register('select-image', openSelector);
@@ -35,7 +20,9 @@
         y = position.y;
         hide = false;
         context = ctxt;
-        // TODO load images ?
+        workspace.loadImageCatalog().subscribe(result => {
+            images = result;
+        });
     }
 
     export function closeSelector(value) {
@@ -95,6 +82,12 @@ img {
     padding: 10px;
     display: inline;
 }
+.tile {
+    text-align: center;
+}
+.tile p {
+    margin-top: 0;
+}
 
 </style>
 
@@ -107,7 +100,10 @@ img {
         </header>
         <div class="images" >
             {#each images as image}
-            <img src={image.src} alt="Image {image.id}" width="300">
+            <div class="tile">
+                <img src={image.url} alt="Image {image.id}" width="300">
+                <p>{image.name}</p>
+            </div>
             {/each}
             <!-- TODO add upload element -->
         </div>

@@ -1,7 +1,9 @@
 import { Command, Node, Editor, NodeProperty, NodeConnection } from "./editor";
 import { Point } from "./geometry";
+import { PropertyType } from "./nodes";
 
 export class CompositeCommand implements Command {
+    isVisual = false; // TODO also test composite
     constructor(private commands: Command[]) {}
 
     execute(editor: Editor) {
@@ -25,6 +27,7 @@ export interface NodeMove {
 }
 
 export class MoveNodeCommand implements Command {
+    isVisual = true;
 
     constructor(private moves: NodeMove[]) {}
 
@@ -49,6 +52,7 @@ export class MoveNodeCommand implements Command {
 }
 
 export class ToggleCollapseCommand implements Command {
+    isVisual = true;
 
     newCollapsed: boolean;
 
@@ -73,12 +77,13 @@ export class ToggleCollapseCommand implements Command {
 }
 
 export class CreateConnectionCommand implements Command {
+    isVisual = false;
     connection: NodeConnection;
 
     constructor(private fromProperty: NodeProperty, private toProperty: NodeProperty) {}
 
     execute(editor: Editor) {
-        this.connection = new NodeConnection(this.fromProperty, this.toProperty);
+        this.connection = editor.createConnection(this.fromProperty, this.toProperty);
         this.connection.connect();
         this.redo(editor);
     }
@@ -96,6 +101,7 @@ export class CreateConnectionCommand implements Command {
 }
 
 export class RemoveConnectionCommand implements Command {
+    isVisual = false;
     constructor(private connection: NodeConnection) {}
 
     execute(editor: Editor) {
@@ -115,6 +121,7 @@ export class RemoveConnectionCommand implements Command {
 }
 
 export class AddNodeCommand implements Command {
+    isVisual = false;
     constructor(private node: Node) {}
 
     execute(editor: Editor) {
@@ -135,6 +142,7 @@ export class AddNodeCommand implements Command {
 }
 
 export class DeleteNodesCommand implements Command {
+    isVisual = false;
 
     private connections: NodeConnection[] = [];
 
@@ -170,6 +178,7 @@ export class DeleteNodesCommand implements Command {
 }
 
 export class ChangePropertyValueCommand implements Command {
+    isVisual = false;
     oldValue: any;
 
     constructor(private property: NodeProperty, private newValue: any) {

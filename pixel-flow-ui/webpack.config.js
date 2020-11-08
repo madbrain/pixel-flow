@@ -56,5 +56,15 @@ module.exports = {
 			filename: '[name].css'
 		})
 	],
-	devtool: prod ? false: 'source-map'
+	devtool: prod ? false: 'source-map',
+	devServer: {
+		port: 9000,
+		proxy: {
+			'/api/frontend-ws': {
+				target: 'ws://localhost:8080',
+				ws: true
+			 },
+			'/api': 'http://localhost:8080'
+		}
+	}
 }

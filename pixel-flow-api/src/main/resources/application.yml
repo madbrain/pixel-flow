@@ -1,0 +1,7 @@
+
+apiserver.url: "192.168.0.10.nip.io:8080"
+
+infrastructure.docker:
+  workspace-root: /home/ludo/Projects/pixel-flow/workspaces
+
+spring.r2dbc.url: r2dbc:h2:file:////home/ludo/Projects/pixel-flow/database

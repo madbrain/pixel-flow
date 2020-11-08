@@ -10,6 +10,7 @@ import { buildTreeFromDefinitions } from "./tree";
 
 export interface ExternalClient {
     openSelector(position: Point, type: string, context: any);
+    onChangeGraph(isVisual: boolean, nodeGroup: NodeGroup);
 }
 
 export enum ControlKey {
@@ -27,6 +28,7 @@ export interface Event {
 }
 
 export interface Command {
+    isVisual: boolean;
     execute(editor: Editor);
     undo(editor: Editor);
     redo(editor: Editor);
@@ -77,6 +79,7 @@ export class NodeProperty {
 }
 
 export class Node {
+    
     bounds: Rectangle;
     collapsed: boolean = false;
     properties: NodeProperty[];
@@ -88,6 +91,10 @@ export class Node {
     constructor(public id: string, public definition: NodeDefinition, location: Point) {
         this.bounds = location.rect(0, 0);
         this.properties = definition.properties.map(def => new NodeProperty(def, this));
+    }
+
+    findProperty(propName: string): NodeProperty {
+        return this.properties.find(property => property.definition.id === propName);
     }
 }
 
@@ -311,24 +318,30 @@ class CommandStack {
             this.undoIndex = this.commands.length - 1;
         }
         command.execute(this.editor);
+        this.editor.changeGraph(command.isVisual);
     }
 
     undo() {
         if (this.undoIndex >= 0) {
-            this.commands[this.undoIndex].undo(this.editor);
+            const command = this.commands[this.undoIndex];
+            command.undo(this.editor);
             this.undoIndex -= 1;
+            this.editor.changeGraph(command.isVisual);
         }
     }
 
     redo() {
         if (this.undoIndex < (this.commands.length-1)) {
             this.undoIndex += 1;
-            this.commands[this.undoIndex].redo(this.editor);
+            const command = this.commands[this.undoIndex];
+            command.redo(this.editor);
+            this.editor.changeGraph(command.isVisual);
         }
     }
 }
 
 export class Editor {
+    
 
     debug = false;
     mousePosition = new Point(0, 0);
@@ -337,9 +350,11 @@ export class Editor {
     state: State = new IdleState();
     commandStack = new CommandStack(this);
     feedbacks: VisualFeedback[] = [];
+    nodeGroup: NodeGroup = { nodes: [] };
 
-    constructor(public renderer: Renderer, private nodeFactory: NodeFactory,
-            public nodeGroup: NodeGroup, private externalClient: ExternalClient) { }
+    constructor(public renderer: Renderer,
+            private nodeFactory: NodeFactory,
+            private externalClient: ExternalClient) { }
 
     draw() {
         this.renderer.context.save();
@@ -407,6 +422,26 @@ export class Editor {
         this.draw();
     }
 
+    createConnection(fromProperty: NodeProperty, toProperty: NodeProperty): NodeConnection {
+        // TODO in GEGL connectionhas to be from OUTPUT to INPUT => should delegate to NodeFactory
+        function findConnection(type: PropertyType) {
+            if (fromProperty.definition.type == type) {
+                return fromProperty;
+            }
+            return toProperty;
+        }
+        return new NodeConnection(findConnection(PropertyType.OUTPUT), findConnection(PropertyType.INPUT));
+    }
+
+    setNodeGroup(nodeGroup: NodeGroup) {
+        this.nodeGroup = nodeGroup;
+        this.draw();
+    }
+
+    changeGraph(isVisual: boolean) {
+        this.externalClient.onChangeGraph(isVisual, this.nodeGroup);
+    }
+
     emit(command: Command) {
         this.commandStack.emit(command);
     }
@@ -445,7 +480,6 @@ export class Editor {
 
     handleKeyPress(event: Event) {
         // TODO should be transferred to IdleState
-        //console.log("KEY", event, event.specialKeys, event.key);
         if ((event.specialKeys & ControlKey.CtrlKey) != 0 && event.key == 'z') {
             this.commandStack.undo();
         } else if ((event.specialKeys & ControlKey.CtrlKey) != 0 && event.key == 'y') {
@@ -464,33 +498,6 @@ export class Editor {
                 }
             });
             this.state = new WaitSelectorCloseState();
-        } else if ((event.specialKeys & ControlKey.ShiftKey) != 0 && event.key == 'D') {
-            const connections = [];
-            this.nodeGroup.nodes.forEach(node => {
-                node.properties
-                    .filter(property => property.definition.type == PropertyType.OUTPUT)
-                    .forEach(property => {
-                        property.connections.forEach(connection => {
-                            connections.push({ from: {
-                                node: connection.from.node.id,
-                                property: connection.from.node.definition.properties.indexOf(connection.from.definition)
-                            }, to: {
-                                node: connection.to.node.id,
-                                property: connection.to.node.definition.properties.indexOf(connection.to.definition)
-                            } });
-                        });
-                    });
-            });
-            const nodes = this.nodeGroup.nodes.map(node => {
-                return {
-                    id: node.id,
-                    type: node.definition.id,
-                    collapsed: node.collapsed,
-                    location: { x: node.bounds.origin.x, y: node.bounds.origin.y },
-                    propertyValues: []
-                };
-            })
-            console.log(JSON.stringify({nodes, connections}));
         } else if (event.key == "Delete") {
             if (this.selection.length > 0) {
                 const nodes = this.selection;

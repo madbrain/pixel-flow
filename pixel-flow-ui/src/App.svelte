@@ -1,26 +1,48 @@
 <script>
+    import { onMount } from 'svelte';
+    import { switchMap, tap } from 'rxjs/operators';
     import { NodeFactory } from './graph-editor/nodes';
     import { load } from './io';
+    import { startWorkspace } from './workspace';
     import NavBar from './NavBar.svelte';
     import GraphEditor from './graph-editor/GraphEditor.svelte';
 
     import { nodeDefinitions, GeglGraphicalHelper } from './gegl/gegl';
-    import { example } from './gegl/example';
     import ColorSelector from './gegl/ColorSelector.svelte';
-    import ImageSelector from './gegl/ImageSelector.svelte';
+    import ImageCatalogSelector from './gegl/ImageCatalogSelector.svelte';
 
     const nodeFactory = new NodeFactory(nodeDefinitions);
-    const nodeGroup = load(nodeFactory, example);
     let editor;
+    let workspace;
+
+    onMount(() => {
+        startWorkspace()
+            .pipe(tap(w => workspace = w))
+            .pipe(switchMap(workspace => {
+                // TODO get graphId from URL
+                const graphId = null;
+                return workspace.loadGraph(graphId);
+            }))
+            .subscribe(graph => {
+                editor.setNodeGroup(load(nodeFactory, graph.content));
+            });
+    });
+
+    function changeGraph(e) {
+        const { isVisual, nodeGroup } = e.detail;
+        workspace.changeGraph(isVisual, nodeGroup);
+    }
 
 </script>
 
 <NavBar on:action={(ev) => editor.doAction(ev.detail)} />
 
 <div class="editor">
-    <GraphEditor bind:this={editor} {nodeGroup} {nodeFactory} graphicalHelper={new GeglGraphicalHelper()}>
+    <GraphEditor bind:this={editor} {nodeFactory}
+            graphicalHelper={new GeglGraphicalHelper()}
+            on:change={changeGraph}>
         <ColorSelector />
-        <ImageSelector />
+        <ImageCatalogSelector {workspace} />
     </GraphEditor>
 </div>
 

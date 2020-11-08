@@ -13,9 +13,11 @@ graphical frontend to create [GEGL](https://www.gegl.org/) node graphs.
 # TODO
 
 * finish node resize command
-* add special Image input node
-* add special Image view node (output)
-* add property values in dump keyboard shortcut
+* add Image preview to node
+* override some node definition to add preview definition
+* add curve editor
+* rename NodeFactory to Graph to also handle connection creation (with GEGL specific ordering)
+* order entries in TreeSelector based on labels
 
 # BUGS
 

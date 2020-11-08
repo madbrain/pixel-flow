@@ -14,6 +14,14 @@ export function convertColorFromString(value: string): Color {
     return { r: 0, g: 0, b: 0 };
 }
 
+export function convertColorToString(color: Color): string {
+    function toHex(value: number) {
+        const x = "0" + value.toString(16);
+        return x.substring(x.length-2, x.length);
+    }
+    return `#${toHex(color.r)}${toHex(color.g)}${toHex(color.b)}`;
+}
+
 export function hsvToRgb(H: number, S: number, V: number): Color {
     const C = V * S;
     const X = C * (1 - Math.abs((H / 60) % 2 - 1));

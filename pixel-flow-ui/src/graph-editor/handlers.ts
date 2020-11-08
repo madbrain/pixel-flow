@@ -23,7 +23,7 @@ function clampRange(range: Range, value: number) {
     return value;
 }
 
-function openNumberEditor(editor: Editor, property: NodeProperty, event: Event) {
+function openValueEditor(editor: Editor, property: NodeProperty, event: Event) {
     const position = editor.getScreenPosition(property.globalBounds().bottomLeft());
     return editor.openSelector(position, 'select-value', {
         value: property.value,
@@ -68,7 +68,7 @@ class WaitChangeNumberGestureState extends State {
     }
 
     handleMouseUp(editor: Editor, event: Event) {
-        return openNumberEditor(editor, this.property, event);
+        return openValueEditor(editor, this.property, event);
     }
 
     handleMouseMove(editor: Editor, event: Event): State {
@@ -100,7 +100,7 @@ class DetectPlusMinusChangeNumberState extends State {
                 editor.emit(new ChangePropertyValueCommand(this.property, newValue));
             }
         } else {
-            return openNumberEditor(editor, this.property, event);
+            return openValueEditor(editor, this.property, event);
         }
         return new IdleState();
     }
@@ -145,6 +145,35 @@ export const numberHandler: PropertyHandler = {
         }
         renderer.drawText(propBounds.origin.offset(style.unit * 5, style.unit * 3), rgb(renderer.theme.TEXT_COLOR), property.definition.label + ":");
         const stringValue = (Math.round(property.getValue() * 100) / 100).toString();
+        renderer.drawText(propBounds.topRight().offset(-style.unit * 5, style.unit * 3), rgb(renderer.theme.TEXT_COLOR), stringValue, Align.RIGHT);
+    }
+};
+
+export const stringHandler: PropertyHandler = {
+
+    handlerMouseDown(editor: Editor, event: Event, property: NodeProperty): State {
+        const propBounds = property.globalBounds().shrink(editor.renderer.style.unit * 2, 0);
+        if (propBounds.contains(event.position)) {
+            return openValueEditor(editor, property, event);
+        }
+        return new IdleState();
+    },
+
+    layout(renderer: Renderer, property: NodeProperty) {
+        const m = renderer.context.measureText(property.definition.label);
+        property.bounds = new Point(0, 0).rect(m.width + renderer.style.unit * 3, renderer.style.unit * 4);
+    },
+
+    draw(renderer: Renderer, property: NodeProperty) {
+        const propBounds = property.globalBounds();
+        const style = renderer.style;
+        const box = propBounds.shrink(style.unit * 2, 0).withHeight(style.unit * 4);
+        renderer.roundBox()
+            .filled(rgb(renderer.theme.PROPERTY_COLOR))
+            .draw(box);
+
+        renderer.drawText(propBounds.origin.offset(style.unit * 5, style.unit * 3), rgb(renderer.theme.TEXT_COLOR), property.definition.label + ":");
+        const stringValue = property.getValue().toString();
         renderer.drawText(propBounds.topRight().offset(-style.unit * 5, style.unit * 3), rgb(renderer.theme.TEXT_COLOR), stringValue, Align.RIGHT);
     }
 };
@@ -249,6 +278,9 @@ export const defaultPropertyHandler: PropertyHandler = {
 export function getDefaultPropertyHandler(property: NodeProperty): PropertyHandler {
     if (property.definition.valueType.type == CommonValueType.INTEGER || property.definition.valueType.type == CommonValueType.REAL) {
         return numberHandler;
+    }
+    if (property.definition.valueType.type == CommonValueType.STRING) {
+        return stringHandler;
     }
     if (property.definition.valueType.type == CommonValueType.ENUM) {
         return enumHandler;

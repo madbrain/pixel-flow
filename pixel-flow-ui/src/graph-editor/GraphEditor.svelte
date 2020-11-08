@@ -1,5 +1,5 @@
 <script>
-import { onMount, setContext } from "svelte";
+import { onMount, setContext, createEventDispatcher } from "svelte";
 import { Editor, ControlKey } from "./editor";
 import { darkTheme, Renderer } from "./renderer";
 import { Point } from "./geometry";
@@ -7,13 +7,14 @@ import { key as selectorKey } from './selector';
 import TreeSelector from './TreeSelector.svelte';
 import ValueSelector from './ValueSelector.svelte';
 
+const dispatch = createEventDispatcher();
+
 let parentElement;
 let canvas;
 let context;
 let width;
 let height;
 
-export let nodeGroup;
 export let nodeFactory;
 export let graphicalHelper;
 
@@ -35,7 +36,7 @@ onMount(() => {
     height = rect.height;
     context = canvas.getContext('2d', {alpha: false});
     renderer = new Renderer(context, { width, height }, theme, graphicalHelper);
-    editor = new Editor(renderer, nodeFactory, nodeGroup, {
+    editor = new Editor(renderer, nodeFactory, {
         openSelector(position, type, context) {
             const openFunc = selectors[type];
             if (openFunc) {
@@ -43,6 +44,9 @@ onMount(() => {
                 return true;
             }
             return false;
+        },
+        onChangeGraph(isVisual, nodeGroup) {
+            dispatch("change", { isVisual, nodeGroup });
         }
     });
     setTimeout(() => {
@@ -50,6 +54,10 @@ onMount(() => {
         editor.draw();
     }, 10);
 });
+
+export function setNodeGroup(nodeGroup) {
+    editor.setNodeGroup(nodeGroup);
+}
 
 export function doAction(action) {
     const rect = parentElement.getBoundingClientRect();

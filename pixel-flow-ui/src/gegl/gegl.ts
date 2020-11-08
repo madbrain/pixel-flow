@@ -7,7 +7,7 @@ import { NodeDefinition, PropertyDefinition, PropertyType } from '../graph-edito
 import { Color, GraphicalHelper, PropertyHandler, Renderer, rgb } from '../graph-editor/renderer';
 import { State } from '../graph-editor/states';
 import { CommonValueType, ValueDefinition } from '../graph-editor/value';
-import { convertColorFromString } from './color';
+import { convertColorFromString, convertColorToString } from './color';
 import { gegl } from './gegl-nodes-db';
 
 enum GeglValueType {
@@ -18,8 +18,15 @@ enum GeglValueType {
 const BOOL_DEF: ValueDefinition = { type: CommonValueType.BOOLEAN };
 const REAL_DEF: ValueDefinition = { type: CommonValueType.REAL };
 const INTEGER_DEF: ValueDefinition = { type: CommonValueType.INTEGER };
+const STRING_DEF: ValueDefinition = { type: CommonValueType.STRING };
 const IMAGE_DEF: ValueDefinition = { type: GeglValueType.IMAGE };
-const COLOR_DEF: ValueDefinition = { type: GeglValueType.COLOR };
+const COLOR_DEF: ValueDefinition = {
+    type: GeglValueType.COLOR,
+    converter: {
+        deserialize: value => convertColorFromString(value),
+        serialize: value => convertColorToString(value)
+    }
+};
 
 function normalizeLabel(title: string, name: string) {
     if (title) {
@@ -33,6 +40,7 @@ function buildPorts(ports, type: PropertyType): PropertyDefinition[] {
     return ports.map(port => {
         return {
             type,
+            id: port,
             label: port,
             linkable: true,
             editable: false,
@@ -57,6 +65,9 @@ function buildType(property): ValueDefinition {
     if (property.type == 'boolean') {
         return BOOL_DEF;
     }
+    if (property.type == 'string') {
+        return STRING_DEF;
+    }
     if (property.type == 'enum') {
         return {
             type: CommonValueType.ENUM,
@@ -72,10 +83,8 @@ function buildType(property): ValueDefinition {
 }
 
 function convertValue(valueType: ValueDefinition, value: any): any {
-    if (value) {
-        if (valueType.type == GeglValueType.COLOR) {
-            return convertColorFromString(value);
-        }
+    if (value && valueType.converter) {
+        return valueType.converter.deserialize(value);
     }
     return value;
 }
@@ -85,6 +94,7 @@ function buildProperties(properties): PropertyDefinition[] {
         const type = buildType(property);
         return {
             type: PropertyType.INPUT,
+            id: property.id,
             label: normalizeLabel(property.nick, property.id),
             linkable: false,
             editable: true,

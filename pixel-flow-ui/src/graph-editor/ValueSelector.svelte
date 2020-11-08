@@ -31,13 +31,19 @@
         if (e.key == "Escape") {
             selectorElement.closeSelector(null);
         } else  if (e.key == "Enter") {
-            const result = !error ? { value: Number(value), context } : null;
+            const result = !error ? { value: convert(value), context } : null;
             selectorElement.closeSelector(result);
         }
     }
 
+    function convert() {
+        if (valueType.type == 'integer' || valueType.type == 'real') {
+            return Number(value);
+        }
+        return value;
+    }
+
     function checkError() {
-        
         if (valueType.type == 'integer') {
             return checkInt(value) || valueType.range && checkRange(valueType.range, value);
         }

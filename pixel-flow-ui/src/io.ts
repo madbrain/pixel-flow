@@ -2,6 +2,7 @@
 import { Node, NodeGroup, NodeConnection } from './graph-editor/editor';
 import { NodeFactory } from './graph-editor/nodes'
 import { Point } from './graph-editor/geometry';
+import { ValueDefinition } from './graph-editor/value';
 
 export interface PointIO {
     x: number;
@@ -10,7 +11,7 @@ export interface PointIO {
 
 export interface PropertyReferenceIO {
     node: string;
-    property: number;
+    property: string;
 }
 
 export interface NodeConnectionIO {
@@ -25,7 +26,7 @@ export interface NodeIO {
     location: PointIO;
     fullWidth?: number;
     collapsedWidth?: number;
-    propertyValues: any[];
+    properties?: Array<{ name: string, value: any }>;
 }
 
 export interface NodeGroupIO {
@@ -42,17 +43,26 @@ export function load(factory: NodeFactory, nodeGroup: NodeGroupIO): NodeGroup {
         node.collapsed = collapsed;
         nodeById[node.id] = node;
         nodes.push(node);
-        nodeIO.propertyValues.forEach((value, i) => {
-            node.properties[i].value = value;
-        });
+        if (nodeIO.properties) {
+            nodeIO.properties.forEach(propertyIO => {
+                const property = node.findProperty(propertyIO.name);
+                property.value = deserializeValue(property.definition.valueType, propertyIO.value);
+            });
+        }
     });
-
     nodeGroup.connections.forEach(connectionIO => {
-        const from = nodeById[connectionIO.from.node].properties[connectionIO.from.property];
-        const to = nodeById[connectionIO.to.node].properties[connectionIO.to.property];
+        const from = nodeById[connectionIO.from.node].findProperty(connectionIO.from.property);
+        const to = nodeById[connectionIO.to.node].findProperty(connectionIO.to.property);
         const connection = new NodeConnection(from, to);
         connection.connect();
     });
 
     return { nodes };
+}
+
+function deserializeValue(valueType: ValueDefinition, value: any) {
+    if (valueType.converter) {
+        return valueType.converter.deserialize(value);
+    }
+    return value;
 }
