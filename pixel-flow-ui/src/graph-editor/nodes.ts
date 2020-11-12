@@ -1,6 +1,13 @@
-import { Node } from "./editor";
-import { Point } from "./geometry";
+import { Editor, Node } from "./editor";
+import { Dimension, Point, Rectangle } from "./geometry";
+import { Renderer } from "./renderer";
 import { ValueDefinition } from './value';
+
+export interface NodePreview {
+    update(editor: Editor, node: Node, context: any);
+    layout(node: Node): Dimension;
+    draw(renderer: Renderer, node: Node, origin: Point);
+}
 
 export enum PropertyType {
     INPUT,
@@ -23,7 +30,8 @@ export interface NodeDefinition {
     id: string;
     label: string;
     categories?: string;
-    properties: PropertyDefinition[]
+    properties: PropertyDefinition[];
+    preview?: NodePreview;
 }
 
 export class NodeFactory {

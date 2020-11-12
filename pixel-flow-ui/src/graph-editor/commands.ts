@@ -1,5 +1,5 @@
 import { Command, Node, Editor, NodeProperty, NodeConnection } from "./editor";
-import { Point } from "./geometry";
+import { Dimension, Point } from "./geometry";
 import { PropertyType } from "./nodes";
 
 export class CompositeCommand implements Command {
@@ -192,6 +192,30 @@ export class ChangePropertyValueCommand implements Command {
 
     undo(editor: Editor) {
         this.property.value = this.oldValue;
+        editor.draw();
+    }
+
+    redo(editor: Editor) {
+        this.execute(editor);
+    }
+
+}
+
+export class ResizeNodeCommand implements Command {
+    isVisual = true;
+    oldWidth: number;
+
+    constructor(private node: Node, private dimension: Dimension) {
+        this.oldWidth = node.bounds.dimension.width;
+    }
+
+    execute(editor: Editor) {
+        this.node.fullWidth = this.dimension.width;
+        editor.draw();
+    }
+
+    undo(editor: Editor) {
+        this.node.fullWidth = this.oldWidth;
         editor.draw();
     }
 

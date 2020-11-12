@@ -1,8 +1,9 @@
 
 import { RxStomp } from '@stomp/rx-stomp';
+import { Observable } from 'rxjs';
 import { ajax } from 'rxjs/ajax';
 import { Subject } from 'rxjs/internal/Subject';
-import { pluck, map, debounceTime } from 'rxjs/operators';
+import { pluck, map, debounceTime, tap } from 'rxjs/operators';
 import { NodeGroup } from './graph-editor/editor';
 import { PropertyType } from './graph-editor/nodes';
 import { ValueDefinition } from './graph-editor/value';
@@ -13,8 +14,9 @@ export class Workspace {
 
     private changeSubject = new Subject();
     private rxStomp = new RxStomp();
+    private catalog;
 
-    constructor(private id: string) {
+    constructor(private id: string, eventCallback: ({ type: string, arg: any}) => {}) {
 
         this.rxStomp.configure({
             brokerURL: this.createBrokerUrl(),
@@ -28,7 +30,14 @@ export class Workspace {
             destination: `/topic/workspace/${this.id}`
         }).subscribe(message => {
             const event = JSON.parse(message.body);
-            console.log("WORKSPACE EVENT", event);
+            if (event.type === 'in-sync') {
+                this.loadRawImageCatalog().subscribe(catalog => {
+                    this.catalog = catalog;
+                    eventCallback({ type: 'update-preview', arg: this });
+                })
+            } else {
+                console.log("WORKSPACE EVENT", event);
+            }
         });
 
         this.changeSubject
@@ -55,14 +64,30 @@ export class Workspace {
     }
 
     loadImageCatalog() {
+        return this.loadRawImageCatalog()
+            .pipe(map(catalog => catalog.images.map(image => ({
+                id: image.name,
+                name: image.name,
+                url: `api/workspace/${this.id}/image/${image.name}?${image.modificationTime}`
+            }))));
+    }
+
+    private loadRawImageCatalog() {
         return ajax({
-            url: `api/workspace/${this.id}/image`
-        }).pipe(pluck("response"))
-        .pipe(map(catalog => catalog.images.map(image => ({
-            id: image.name,
-            name: image.name,
-            url: `api/workspace/${this.id}/image/${image.name}?${image.modificationTime}`
-        }))));
+                url: `api/workspace/${this.id}/image`
+            }).pipe(pluck("response"));
+    }
+
+    loadImage(filename: string): Observable<HTMLImageElement> {
+        const image = this.catalog.images.find(image => image.name === filename);
+        return new Observable(observer => {
+            const img = new Image();
+            img.onload = () => {
+                observer.next(img);
+                observer.complete();
+            };
+            img.src = `api/workspace/${this.id}/image/${image.name}?${image.modificationTime}`;
+        });
     }
 
     changeGraph(isVisual: boolean, nodeGroup: NodeGroup) {
@@ -115,7 +140,7 @@ export class Workspace {
     }
 }
 
-export function startWorkspace() {
+export function startWorkspace(eventCallback: ({type: string, arg: any}) => {}) {
     let workspaceId = localStorage.getItem(WORKSPACE_KEY);
     return ajax({
         method: "POST",
@@ -132,6 +157,6 @@ export function startWorkspace() {
         .pipe(map(response => {
             const id = response.id;
             localStorage.setItem(WORKSPACE_KEY, id);
-            return new Workspace(id);
+            return new Workspace(id, eventCallback);
         }));
 }

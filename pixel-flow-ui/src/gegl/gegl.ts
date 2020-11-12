@@ -1,9 +1,9 @@
 
 import { ChangePropertyValueCommand } from '../graph-editor/commands';
 import { Editor, Event, Node, NodeProperty } from '../graph-editor/editor';
-import { Point } from '../graph-editor/geometry';
+import { Dimension, Point } from '../graph-editor/geometry';
 import { getDefaultPropertyHandler } from '../graph-editor/handlers';
-import { NodeDefinition, PropertyDefinition, PropertyType } from '../graph-editor/nodes';
+import { NodeDefinition, NodePreview, PropertyDefinition, PropertyType } from '../graph-editor/nodes';
 import { Color, GraphicalHelper, PropertyHandler, Renderer, rgb } from '../graph-editor/renderer';
 import { State } from '../graph-editor/states';
 import { CommonValueType, ValueDefinition } from '../graph-editor/value';
@@ -104,6 +104,54 @@ function buildProperties(properties): PropertyDefinition[] {
     });
 }
 
+class ImagePreview implements NodePreview {
+
+    private image: HTMLImageElement;
+
+    constructor(private filePropName: string) {}
+
+    update(editor: Editor, node: Node, context: any) {
+        const filename = <string>(node.findProperty(this.filePropName).value);
+        context.loadImage(filename).subscribe(image => {
+            this.image = image;
+            editor.draw();
+        });
+    }
+
+    layout(node: Node): Dimension {
+        const width = node.fullWidth;
+        return new Dimension(width, width * this.getRatio());
+    }
+
+    draw(renderer: Renderer, node: Node, origin: Point) {
+        const style = renderer.style;
+        const width = node.bounds.dimension.width;
+        const previewRect = origin.rect(width, width * this.getRatio()).shrink(style.unit, style.unit);
+        if (this.image) {
+            renderer.drawImage(this.image, previewRect);
+        } else {
+            renderer.roundBox()
+                .filled(rgb(renderer.theme.NODE_BACK_COLOR))
+                .draw(previewRect);
+        }
+    }
+
+    private getRatio() {
+        if (this.image) {
+            return this.image.height / this.image.width;
+        }
+        return 2.0 / 3.0;
+    }
+}
+
+function buildPreview(operation) {
+    if (operation.name === "gegl:png-load"
+            || operation.name === "gegl:png-save") {
+        return new ImagePreview("path");
+    }
+    return undefined;
+} 
+
 function buildDefinitions(): NodeDefinition[] {
     return gegl.map(operation => {
         return ({
@@ -112,7 +160,8 @@ function buildDefinitions(): NodeDefinition[] {
             categories: operation.categories,
             properties: buildPorts(operation.inputs, PropertyType.INPUT)
                 .concat(buildPorts(operation.outputs, PropertyType.OUTPUT))
-                .concat(buildProperties(operation.properties))
+                .concat(buildProperties(operation.properties)),
+            preview: buildPreview(operation)
         });
     });
 }
@@ -154,9 +203,13 @@ export class GeglGraphicalHelper implements GraphicalHelper {
         if (node.definition.categories && node.definition.categories.startsWith("programming:")) {
             return { r: 0xfc, g: 0x83, b: 0x47 }; // orange
         }
+        if (node.definition.categories
+                && (node.definition.categories === "hidden"
+                    || node.definition.categories === "output")) {
+            return {r: 0xaa, g: 0x26, b: 0x31 }; // dark red 
+            //return { r: 0xcc, g: 0x29, b: 0x3e }; // red
+        }
         if (node.definition.id == "gegl:add") {
-            // return { r: 0xcc, g: 0x29, b: 0x3e }; // red
-            // return {r: 0xaa, g: 0x26, b: 0x31 }; // dark red 
             return {r: 0x85, g: 0x67, b: 0xc6 }; // purple
         }
         return { r: 0x00, g: 0xc9, b: 0x8a }; // green

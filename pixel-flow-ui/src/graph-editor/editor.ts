@@ -1,4 +1,4 @@
-import { Rectangle, Point } from "./geometry";
+import { Rectangle, Point, Dimension } from "./geometry";
 import { Renderer, rgb, Corner, Direction, ZoomState } from "./renderer";
 import { defaultPropertyHandler } from "./handlers";
 import { State, IdleState, AddNodeState, WaitSelectorCloseState } from "./states";
@@ -87,6 +87,7 @@ export class Node {
     // computed to accelerated drawing and hit detection
     labelBounds: Rectangle;
     collapseArrowCenter: Point;
+    fullWidth = 200;
 
     constructor(public id: string, public definition: NodeDefinition, location: Point) {
         this.bounds = location.rect(0, 0);
@@ -174,6 +175,10 @@ function drawNodeFull(editor: Editor, node: Node) {
     renderer.drawArrow(node.collapseArrowCenter, style.collapseArrowSize, Direction.DOWN, rgb(renderer.theme.TEXT_COLOR, 0.5));
     renderer.drawText(node.collapseArrowCenter.offset(style.unit * 2.5, style.unit), rgb(renderer.theme.TEXT_COLOR), node.definition.label)
     
+    if (node.definition.preview) {
+        const origin = node.bounds.origin.offset(0, renderer.style.headerHeight);
+        node.definition.preview.draw(renderer, node, origin);
+    }
     node.properties.forEach(prop => {
         drawProperty(renderer, node.bounds.origin, prop);
     });
@@ -217,17 +222,20 @@ function layoutNodeFull(renderer: Renderer, node: Node) {
             console.log("No handler to layout property", prop);
         }
     });
-    let width = 0;
+    let width = node.fullWidth;
     node.properties.forEach(prop => {
         width = Math.max(width, prop.bounds.dimension.width);
     });
     
-    // TODO minimal node width ?
     const MINIMAL_NODE_WIDTH = 200;
     width = Math.max(MINIMAL_NODE_WIDTH, width);
-    // TODO save fullwidth
+    node.fullWidth = width;
 
-    let y = renderer.style.headerHeight;
+    let previewDimension = new Dimension(0, 0);
+    if (node.definition.preview) {
+        previewDimension = node.definition.preview.layout(node);
+    }
+    let y = renderer.style.headerHeight + previewDimension.height;
     node.properties.forEach((prop, i) => {
         if (i > 0) {
             y += renderer.style.unit / 2;
@@ -423,7 +431,7 @@ export class Editor {
     }
 
     createConnection(fromProperty: NodeProperty, toProperty: NodeProperty): NodeConnection {
-        // TODO in GEGL connectionhas to be from OUTPUT to INPUT => should delegate to NodeFactory
+        // TODO in GEGL connection has to be from OUTPUT to INPUT => should delegate to NodeFactory
         function findConnection(type: PropertyType) {
             if (fromProperty.definition.type == type) {
                 return fromProperty;
@@ -436,6 +444,16 @@ export class Editor {
     setNodeGroup(nodeGroup: NodeGroup) {
         this.nodeGroup = nodeGroup;
         this.draw();
+    }
+
+    onWorkspaceEvent(event: { type: string, arg: any }) {
+        if (event.type === 'update-preview') {
+            this.nodeGroup.nodes.forEach(node => {
+                if (node.definition.preview) {
+                    node.definition.preview.update(this, node, event.arg);
+                }
+            });
+        }
     }
 
     changeGraph(isVisual: boolean) {

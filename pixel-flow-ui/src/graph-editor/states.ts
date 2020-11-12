@@ -2,7 +2,7 @@ import { Editor, Event, Node, NodeProperty, ControlKey, VisualFeedback, Selectio
 import { Point, Rectangle } from "./geometry";
 import { StyleDimension } from "./renderer";
 import { MoveNodeCommand as MoveNodesCommand, ToggleCollapseCommand, CreateConnectionCommand, RemoveConnectionCommand,
-    CompositeCommand, AddNodeCommand } from "./commands";
+    CompositeCommand, AddNodeCommand, ResizeNodeCommand } from "./commands";
 
 export class State {
     handleMouseMove(editor: Editor, event: Event): State {
@@ -64,8 +64,7 @@ export class IdleState extends State {
         if (event.specialKeys & ControlKey.AltKey) {
             return new DragPanningState(event.position);
         }
-        // TODO must process nodes in reverse order to process overlapping nodes first
-        for (let node of editor.nodeGroup.nodes) {
+        for (let node of editor.nodeGroup.nodes.slice().reverse()) {
             // TODO compute a special node bounds containing connectors to speed up detection
             const connector = findConnectorOfNode(node, event.position, editor.renderer.style);
             if (connector != null) {
@@ -297,8 +296,7 @@ class DragResizeNodeState extends State {
     }
 
     handleMouseUp(editor: Editor, event: Event): State {
-        // TODO emit command
-        console.log("EMIT resize node command", this.node, this.feedback.bounds);
+        editor.emit(new ResizeNodeCommand(this.node, this.feedback.bounds.dimension));
         editor.removeFeedback(this.feedback);
         editor.draw();
         return new IdleState();

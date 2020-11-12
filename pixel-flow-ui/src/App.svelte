@@ -16,7 +16,7 @@
     let workspace;
 
     onMount(() => {
-        startWorkspace()
+        startWorkspace(event => editor.onWorkspaceEvent(event))
             .pipe(tap(w => workspace = w))
             .pipe(switchMap(workspace => {
                 // TODO get graphId from URL

@@ -384,4 +384,8 @@ export class Renderer {
         this.context.stroke();
         this.context.setLineDash([]);
     }
+
+    drawImage(image: HTMLImageElement, bounds: Rectangle) {
+        this.context.drawImage(image, bounds.origin.x, bounds.origin.y, bounds.dimension.width, bounds.dimension.height);
+    }
 }

@@ -59,6 +59,10 @@ export function setNodeGroup(nodeGroup) {
     editor.setNodeGroup(nodeGroup);
 }
 
+export function onWorkspaceEvent(event) {
+    editor.onWorkspaceEvent(event);
+}
+
 export function doAction(action) {
     const rect = parentElement.getBoundingClientRect();
     editor.doAction(new Point(rect.left, rect.top), action);
