@@ -1,0 +1,19 @@
+version: "3.8"
+services:
+  back:
+    image: "pixel-flow-api"
+    environment:
+      - APISERVER_URL=back:8080
+      - INFRASTRUCTURE_DOCKER_NETWORK=pixel-flow_default
+      - INFRASTRUCTURE_DOCKER_WORKSPACE_ROOT_MOUNT=${PIXELFLOW_HOST}/workspaces
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${PIXELFLOW_HOST}/workspaces:/app/pixelflow/workspaces
+  front:
+    image: "pixel-flow-front"
+    environment:
+      - PIXELFLOW_API_HOST=back:8080
+    ports:
+      - "9000:80"
+    links:
+      - "back"

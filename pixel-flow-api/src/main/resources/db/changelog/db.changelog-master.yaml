@@ -1,0 +1,27 @@
+databaseChangeLog:
+  - changeSet:
+      id:  1
+      author:  ludo
+      changes:
+        - createTable:
+            tableName:  workspace
+            columns:
+              - column:
+                  name:  id
+                  type:  int
+                  autoIncrement:  true
+                  constraints:
+                    primaryKey:  true
+                    nullable:  false
+              - column:
+                  name:  workspace_id
+                  type:  varchar(50)
+              - column:
+                  name:  status
+                  type:  varchar(30)
+              - column:
+                  name:  runtime_id
+                  type:  varchar(80)
+              - column:
+                  name:  graph_id
+                  type:  varchar(50)

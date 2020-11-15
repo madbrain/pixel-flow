@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 
 import java.io.*;
@@ -25,6 +26,7 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -75,8 +77,15 @@ public class DockerInfrastructureService implements InfrastructureService {
                             "PIXELFLOW_APISERVER_URL=" + getApiServerUrl())
                     .withWorkingDir("/workspace");
 
+            if (StringUtils.hasText(properties.getNetwork())) {
+                LOGGER.info("Using docker network " + properties.getNetwork());
+                createCommand.getHostConfig().withNetworkMode(properties.getNetwork());
+            }
+
+            Path workspaceMountPath = Paths.get(Optional.ofNullable(properties.getWorkspaceRootMount())
+                    .orElse(properties.getWorkspaceRoot()), workspaceId.getId());
             createCommand.getHostConfig().setBinds(
-                    new Bind(workspacePath.toString(), new Volume("/workspace"), AccessMode.rw));
+                    new Bind(workspaceMountPath.toString(), new Volume("/workspace"), AccessMode.rw));
 
             CreateContainerResponse response = createCommand.exec();
 
@@ -93,13 +102,13 @@ public class DockerInfrastructureService implements InfrastructureService {
             dockerClient.startContainerCmd(containerId).exec();
         }
 
-        // TODO save status and containerId in workspace
         workspace.setStatus(WorkspaceStatus.STARTED);
         workspace.setRuntimeId(containerId);
 
-        repository.save(workspace);
+        repository.save(workspace).subscribe(entity -> {
+            LOGGER.info("Started Container id: " + entity.getRuntimeId());
+        });
 
-        LOGGER.info("Started Container id: " + containerId);
     }
 
     @Override

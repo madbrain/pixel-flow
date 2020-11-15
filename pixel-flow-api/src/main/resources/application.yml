@@ -1,7 +1,18 @@
 
+pixelflow.home: /app/pixelflow
+
 apiserver.url: "192.168.0.10.nip.io:8080"
 
 infrastructure.docker:
-  workspace-root: /home/ludo/Projects/pixel-flow/workspaces
+  workspace-root: "${pixelflow.home}/workspaces"
+  network:
 
-spring.r2dbc.url: r2dbc:h2:file:////home/ludo/Projects/pixel-flow/database
+spring:
+  liquibase:
+    url: "jdbc:h2:file:${pixelflow.home}/database;DB_CLOSE_ON_EXIT=FALSE"
+    user: sa
+    password:
+  r2dbc:
+    url: "r2dbc:h2:file:///${pixelflow.home}/database"
+    username: sa
+    password:
