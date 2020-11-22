@@ -6,11 +6,16 @@ import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
+import com.github.madbrain.pixelflow.services.DockerInfrastructureService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class DockerClientConfiguration {
+@ConditionalOnProperty(name = "infrastructure.type", havingValue = "docker")
+@EnableConfigurationProperties(DockerInfrastructureProperties.class)
+public class DockerInfrastructureConfiguration {
 
     @Bean
     public DockerClientConfig dockerConfig() {
@@ -18,7 +23,7 @@ public class DockerClientConfiguration {
     }
 
     @Bean
-    DockerHttpClient dockerHttpClient(DockerClientConfig config) {
+    public DockerHttpClient dockerHttpClient(DockerClientConfig config) {
         return new ApacheDockerHttpClient.Builder()
                 .dockerHost(config.getDockerHost())
                 .sslConfig(config.getSSLConfig())
@@ -28,5 +33,10 @@ public class DockerClientConfiguration {
     @Bean
     public DockerClient dockerClient(DockerClientConfig config, DockerHttpClient httpClient) {
         return DockerClientImpl.getInstance(config, httpClient);
+    }
+
+    @Bean
+    public DockerInfrastructureService dockerInfrastructureService() {
+        return new DockerInfrastructureService();
     }
 }

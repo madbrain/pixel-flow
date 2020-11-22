@@ -1,4 +1,4 @@
-name: Docker GEGL Sever
+name: Docker API Sever
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  IMAGE_NAME: pixel-flow-server
+  IMAGE_NAME: pixel-flow-api
 
 jobs:
   publish-server:
@@ -16,7 +16,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: pixel-flow-server
+        working-directory: pixel-flow-api
 
     steps:
       - uses: actions/checkout@v2

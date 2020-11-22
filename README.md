@@ -18,4 +18,4 @@ docker-compose up -d
 
 ## TODO
 
- * Add Kubernetes support
+ * Add Helm chart
