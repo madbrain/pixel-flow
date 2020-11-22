@@ -43,9 +43,10 @@ public class KubernetesInfrastructureService extends SharedWorkspaceInfrastructu
 
         CoreV1Api api = new CoreV1Api(apiClient);
         try {
+            String namespace = Optional.ofNullable(properties.getNamespace()).orElse("default");
             String labelSelector = PIXELFLOW_WORKSPACE_LABEL + "=" + workspaceId.getId();
-            V1PodList list = api.listPodForAllNamespaces(null, null, null,
-                    labelSelector, null, null, null, null, null);
+            V1PodList list = api.listNamespacedPod(namespace, null, null, null,
+                    null, labelSelector, null, null, null, null);
             if (list.getItems().size() > 0) {
                 V1Pod pod = list.getItems().get(0);
                 LOGGER.info("Existing pod {} for workspace {}", pod.getMetadata().getName(), workspaceId.getId());
@@ -55,37 +56,35 @@ public class KubernetesInfrastructureService extends SharedWorkspaceInfrastructu
             // TODO use deployment instead for more robustness (but pod is already automatically restarted ?)
             V1Pod pod = new V1PodBuilder()
                     .withNewMetadata()
-                        .withGenerateName("pixelflow-server-")
-                        .addToLabels(PIXELFLOW_WORKSPACE_LABEL, workspaceId.getId())
+                    .withGenerateName("pixelflow-server-")
+                    .addToLabels(PIXELFLOW_WORKSPACE_LABEL, workspaceId.getId())
                     .endMetadata()
                     .withNewSpec()
-                        .addNewContainer()
-                            .withName("server")
-                            .withImage("ghcr.io/madbrain/pixel-flow-server:latest")
-                            .withWorkingDir("/workspace")
-                            .addNewEnv()
-                                .withName("PIXELFLOW_WORKSPACE_ID").withValue(workspaceId.getId())
-                            .and().addNewEnv()
-                                .withName("PIXELFLOW_APISERVER_URL").withValue(getApiServerUrl())
-                            .endEnv()
-                            .addNewVolumeMount()
-                                .withMountPath("/workspace")
-                                .withSubPath(workspaceId.getId())
-                                .withName("workspace-pv-storage")
-                            .endVolumeMount()
-                        .endContainer()
-                        .addNewVolume()
-                            .withName("workspace-pv-storage")
-                            .withNewPersistentVolumeClaim()
-                                .withClaimName("workspace-pv-claim")
-                            .endPersistentVolumeClaim()
-                        .endVolume()
+                    .addNewContainer()
+                    .withName("server")
+                    .withImage("ghcr.io/madbrain/pixel-flow-server:latest")
+                    .withWorkingDir("/workspace")
+                    .addNewEnv()
+                    .withName("PIXELFLOW_WORKSPACE_ID").withValue(workspaceId.getId())
+                    .and().addNewEnv()
+                    .withName("PIXELFLOW_APISERVER_URL").withValue(getApiServerUrl())
+                    .endEnv()
+                    .addNewVolumeMount()
+                    .withMountPath("/workspace")
+                    .withSubPath(workspaceId.getId())
+                    .withName("workspace-pv-storage")
+                    .endVolumeMount()
+                    .endContainer()
+                    .addNewVolume()
+                    .withName("workspace-pv-storage")
+                    .withNewPersistentVolumeClaim()
+                    .withClaimName("workspace-pv-claim")
+                    .endPersistentVolumeClaim()
+                    .endVolume()
                     .endSpec()
                     .build();
 
-            V1Pod result = api.createNamespacedPod(Optional.ofNullable(
-                    properties.getNamespace()).orElse("default"),
-                    pod, null, null, null);
+            V1Pod result = api.createNamespacedPod(namespace, pod, null, null, null);
 
             workspace.setStatus(WorkspaceStatus.STARTED);
             workspace.setRuntimeId(result.getMetadata().getName());
